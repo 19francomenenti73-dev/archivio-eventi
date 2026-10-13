@@ -6,7 +6,6 @@ EXCEL_FILE = "eventi.xlsx"      # Il file Excel che caricherai dal cellulare
 GEOJSON_FILE = "events.geojson" # L'archivio ufficiale che alimenta la mappa
 
 def merge_excel_to_geojson():
-    # 1. Carica l'archivio esistente (se c'è) o ne crea uno vuoto
     if os.path.exists(GEOJSON_FILE):
         try:
             with open(GEOJSON_FILE, "r", encoding="utf-8") as f:
@@ -16,7 +15,6 @@ def merge_excel_to_geojson():
     else:
         geojson_data = {"type": "FeatureCollection", "features": []}
 
-    # 2. Verifica che il file Excel esista nel repository
     if not os.path.exists(EXCEL_FILE):
         print(f"❌ File Excel '{EXCEL_FILE}' non trovato. Caricalo nel repository.")
         return
@@ -29,11 +27,10 @@ def merge_excel_to_geojson():
 
     existing_features = geojson_data.get("features", [])
     
-    # Crea un set di chiavi esistenti per evitare duplicati
     existing_keys = {
         (
-            f["geometry"]["coordinates"][1], # lat
-            f["geometry"]["coordinates"][0], # lon
+            f["geometry"]["coordinates"][1],
+            f["geometry"]["coordinates"][0],
             f["properties"].get("titolo"),
             f["properties"].get("data_ora")
         )
@@ -42,7 +39,6 @@ def merge_excel_to_geojson():
 
     nuovi_inseriti = 0
 
-    # 3. Legge ogni riga del tuo Excel
     for _, row in df.iterrows():
         try:
             lat = float(row["lat"])
@@ -79,7 +75,6 @@ def merge_excel_to_geojson():
 
     geojson_data["features"] = existing_features
 
-    # 4. Salva il file GeoJSON aggiornato
     with open(GEOJSON_FILE, "w", encoding="utf-8") as f:
         json.dump(geojson_data, f, ensure_ascii=False, indent=2)
 
@@ -87,3 +82,4 @@ def merge_excel_to_geojson():
 
 if __name__ == "__main__":
     merge_excel_to_geojson()
+    
