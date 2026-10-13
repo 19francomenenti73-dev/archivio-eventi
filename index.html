@@ -174,14 +174,70 @@
       zoomControl: false
     }).setView([42.3, 12.5], 6);
 
-    // Zoom in alto a destra per coerenza con gli altri tracker
+    // Zoom in alto a destra
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Layer cartografico a rilievo fisico Esri
+    // Layer cartografico Esri
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri &mdash; Source: US National Park Service',
-      maxZoom: 9
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 12
     }).addTo(map);
 
-    // Funzione per associare l'emoji giusta
-    
+    // Funzione per associare l'emoji giusta alla categoria dell'evento
+    function getEmojiForCategory(cat) {
+      if (!cat) return '⚠️';
+      const c = cat.toLowerCase();
+      if (c.includes('tromba') || c.includes('tornado') || c.includes('twister')) return '🌪️';
+      if (c.includes('fulmin') || c.includes('lamp') || c.includes('temporale')) return '⚡';
+      if (c.includes('vento') || c.includes('raffica') || c.includes('downburst')) return '🌬️';
+      if (c.includes('grandin') || c.includes('blizzard')) return '⛈️';
+      if (c.includes('neve') || c.includes('gelo') || c.includes('ghiaccio')) return '❄️';
+      return '⚠️';
+    }
+
+    // Caricamento del file events.geojson
+    fetch('events.geojson')
+      .then(res => res.json())
+      .then(data => {
+        var count = data.features ? data.features.length : 0;
+        document.getElementById('event-count').innerText = "Eventi attivi in archivio: " + count;
+
+        L.geoJSON(data, {
+          pointToLayer: function (feature, latlng) {
+            var cat = feature.properties.categoria || '';
+            var emoji = getEmojiForCategory(cat);
+            
+            var emojiIcon = L.divIcon({
+              className: 'custom-emoji-icon',
+              html: `<span>${emoji}</span>`,
+              iconSize: [30, 30],
+              iconAnchor: [15, 15]
+            });
+
+            return L.marker(latlng, { icon: emojiIcon });
+          },
+          onEachFeature: function (feature, layer) {
+            var p = feature.properties;
+            var cat = p.categoria || 'Evento Severo';
+            var loc = p.localita || 'Non specificata';
+            var dataOra = p.data_ora || 'Non specificata';
+
+            var popupContent = `
+              <div style="font-family:inherit; min-width:200px; line-height:1.4;">
+                <b style="color: #f87171; font-size:13px; display:block; margin-bottom:4px; text-transform:capitalize;">${cat}</b>
+                <b>Località:</b> ${loc}<br>
+                <b>Data/Ora:</b> ${dataOra}<br>
+              </div>
+            `;
+            layer.bindPopup(popupContent);
+          }
+        }).addTo(map);
+      })
+      .catch(err => {
+        console.log("In attesa del popolamento file GeoJSON:", err);
+        document.getElementById('event-count').innerText = "Archivio pronto (In attesa primo evento)";
+      });
+  </script>
+
+</body>
+</html>
