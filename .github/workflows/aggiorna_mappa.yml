@@ -1,0 +1,34 @@
+name: Aggiorna Archivio Mappa da Excel
+
+on:
+  push:
+    paths:
+      - 'eventi.xlsx'
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configura Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Installa librerie
+        run: pip install pandas openpyxl
+
+      - name: Esegui lo script di conversione
+        run: python merge_excel_to_archive.py
+
+      - name: Salva e pubblica i cambiamenti
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add events.geojson
+          git commit -m "Auto-update events.geojson da Excel" || exit 0
+          git push
+          
