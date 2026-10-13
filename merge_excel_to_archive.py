@@ -47,7 +47,6 @@ def merge_excel_to_geojson():
             categoria = str(row.get("categoria", "Altro"))
             localita = str(row.get("localita", ""))
             data_ora = str(row.get("data_ora", ""))
-            fonte_nome = str(row.get("fonte_nome", "Inserimento da Cellulare"))
 
             event_key = (lat, lon, titolo, data_ora)
 
@@ -62,8 +61,7 @@ def merge_excel_to_geojson():
                         "categoria": categoria,
                         "titolo": titolo,
                         "localita": localita,
-                        "data_ora": data_ora,
-                        "fonte_nome": fonte_nome
+                        "data_ora": data_ora
                     }
                 }
                 existing_features.append(feature)
