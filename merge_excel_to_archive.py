@@ -1,9 +1,20 @@
 import pandas as pd
 import json
 import os
+import glob
 
-EXCEL_FILE = "eventi.xlsx"      # Il file Excel che caricherai dal cellulare
 GEOJSON_FILE = "events.geojson" # L'archivio ufficiale che alimenta la mappa
+
+def find_excel_file():
+    # Cerca automaticamente qualsiasi file Excel nella cartella che finisca per .xlsx
+    files = glob.glob("*.xlsx")
+    if not files:
+        return None
+    # Prende il primo file .xlsx trovato (esclude eventuale file di output se fosse .xlsx)
+    for f in files:
+        if not f.startswith("~$"): # Esclude file temporanei di Excel
+            return f
+    return None
 
 def merge_excel_to_geojson():
     if os.path.exists(GEOJSON_FILE):
@@ -15,23 +26,26 @@ def merge_excel_to_geojson():
     else:
         geojson_data = {"type": "FeatureCollection", "features": []}
 
-    if not os.path.exists(EXCEL_FILE):
-        print(f"❌ File Excel '{EXCEL_FILE}' non trovato. Caricalo nel repository.")
+    excel_file = find_excel_file()
+    if not excel_file:
+        print("❌ Nessun file Excel trovato nel repository.")
         return
 
+    print(f"📂 Trovato file Excel: {excel_file}")
+
     try:
-        df = pd.read_excel(EXCEL_FILE)
+        df = pd.read_excel(excel_file)
     except Exception as e:
         print(f"❌ Errore nella lettura del file Excel: {e}")
         return
 
     existing_features = geojson_data.get("features", [])
     
+    # Chiave di controllo basata su coordinate e data per evitare duplicati
     existing_keys = {
         (
             f["geometry"]["coordinates"][1],
             f["geometry"]["coordinates"][0],
-            f["properties"].get("titolo"),
             f["properties"].get("data_ora")
         )
         for f in existing_features
@@ -43,12 +57,11 @@ def merge_excel_to_geojson():
         try:
             lat = float(row["lat"])
             lon = float(row["lon"])
-            titolo = str(row.get("titolo", "Evento"))
-            categoria = str(row.get("categoria", "Altro"))
+            categoria = str(row.get("categoria", "Evento"))
             localita = str(row.get("localita", ""))
             data_ora = str(row.get("data_ora", ""))
 
-            event_key = (lat, lon, titolo, data_ora)
+            event_key = (lat, lon, data_ora)
 
             if event_key not in existing_keys:
                 feature = {
@@ -59,7 +72,6 @@ def merge_excel_to_geojson():
                     },
                     "properties": {
                         "categoria": categoria,
-                        "titolo": titolo,
                         "localita": localita,
                         "data_ora": data_ora
                     }
