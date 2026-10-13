@@ -15,6 +15,21 @@
         "localita": "A largo Siracusa",
         "data_ora": "13/10/2026-"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.36,
+          38.15
+        ]
+      },
+      "properties": {
+        "categoria": "tromba marina",
+        "localita": "a largo Palermo",
+        "data_ora": "2026-10-13 00:00:00"
+      }
     }
   ]
 }
