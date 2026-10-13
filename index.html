@@ -117,6 +117,15 @@
       100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
 
+    /* Icona emoji personalizzata */
+    .custom-emoji-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.7));
+    }
+
     /* Popup personalizzati in stile dark */
     .leaflet-popup-content-wrapper {
       background: #0f172a !important;
@@ -168,52 +177,11 @@
     // Zoom in alto a destra per coerenza con gli altri tracker
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Layer cartografico a rilievo fisico Esri (stesso identico dello Snow Tracker)
+    // Layer cartografico a rilievo fisico Esri
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri &mdash; Source: US National Park Service',
       maxZoom: 9
     }).addTo(map);
 
-    // Icona personalizzata con cerchietto rosso pulsante
-    var pulsingIcon = L.divIcon({
-      className: '',
-      html: '<div style="width: 16px; height: 16px; background-color: #ef4444; border-radius: 50%; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); animation: pulse 1.8s infinite; border: 2px solid #fff;"></div>',
-      iconSize: [16, 16],
-      iconAnchor: [8, 8]
-    });
-
-    // Caricamento del file events.geojson generato automaticamente da GitHub Actions
-    fetch('events.geojson')
-      .then(res => res.json())
-      .then(data => {
-        var count = data.features ? data.features.length : 0;
-        document.getElementById('event-count').innerText = "Eventi attivi in archivio: " + count;
-
-        L.geoJSON(data, {
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, { icon: pulsingIcon });
-          },
-          onEachFeature: function (feature, layer) {
-            var p = feature.properties;
-            var popupContent = `
-              <div style="font-family:inherit; min-width:210px; line-height:1.4;">
-                <b style="color: #f87171; font-size:13px; display:block; margin-bottom:4px;">${p.categoria}</b>
-                <b>Data/Ora:</b> ${p.data_ora}<br>
-                <b>Dettaglio:</b> ${p.titolo}<br>
-                <hr style="border:0; border-top:1px solid #334155; margin:6px 0;">
-                <a href="${p.fonte_link}" target="_blank" style="color:#38bdf8; text-decoration:none;"><b>Fonte originale &raquo;</b></a><br>
-                <span style="font-size:10px; color:#94a3b8;">Testata: ${p.fonte_nome}</span>
-              </div>
-            `;
-            layer.bindPopup(popupContent);
-          }
-        }).addTo(map);
-      })
-      .catch(err => {
-        console.log("In attesa del popolamento file GeoJSON:", err);
-        document.getElementById('event-count').innerText = "Archivio pronto (In attesa primo evento)";
-      });
-  </script>
-
-</body>
-</html>
+    // Funzione per associare l'emoji giusta
+    
