@@ -6,13 +6,12 @@ import glob
 GEOJSON_FILE = "events.geojson" # L'archivio ufficiale che alimenta la mappa
 
 def find_excel_file():
-    # Cerca automaticamente qualsiasi file Excel nella cartella che finisca per .xlsx
-    files = glob.glob("*.xlsx")
+    # Cerca qualsiasi file che contenga 'xlsx' nel nome, ignorando le doppie estensioni del telefono
+    files = glob.glob("*xlsx*")
     if not files:
         return None
-    # Prende il primo file .xlsx trovato (esclude eventuale file di output se fosse .xlsx)
     for f in files:
-        if not f.startswith("~$"): # Esclude file temporanei di Excel
+        if not f.startswith("~$") and f != GEOJSON_FILE:
             return f
     return None
 
@@ -31,7 +30,7 @@ def merge_excel_to_geojson():
         print("❌ Nessun file Excel trovato nel repository.")
         return
 
-    print(f"📂 Trovato file Excel: {excel_file}")
+    print(f"📂 Trovato file: {excel_file}")
 
     try:
         df = pd.read_excel(excel_file)
@@ -41,7 +40,6 @@ def merge_excel_to_geojson():
 
     existing_features = geojson_data.get("features", [])
     
-    # Chiave di controllo basata su coordinate e data per evitare duplicati
     existing_keys = {
         (
             f["geometry"]["coordinates"][1],
