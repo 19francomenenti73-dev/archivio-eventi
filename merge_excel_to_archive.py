@@ -3,11 +3,14 @@ import json
 import os
 import glob
 
-GEOJSON_FILE = "events.geojson" # L'archivio ufficiale che alimenta la mappa
+GEOJSON_FILE = "events.geojson"
 
 def find_excel_file():
-    # Cerca qualsiasi file che contenga 'xlsx' nel nome, ignorando le doppie estensioni del telefono
-    files = glob.glob("*xlsx*")
+    # Cerca qualsiasi file che contenga 'xlsx' nel nome (gestisce doppie estensioni e maiuscole/minuscole)
+    files = glob.glob("*[Xx][Ll][Ss][Xx]*")
+    if not files:
+        # Fallback di sicurezza: cerca qualsiasi file .xlsx o .XLSX
+        files = glob.glob("*.xlsx") + glob.glob("*.XLSX")
     if not files:
         return None
     for f in files:
@@ -34,6 +37,8 @@ def merge_excel_to_geojson():
 
     try:
         df = pd.read_excel(excel_file)
+        # Forza tutte le intestazioni in minuscolo ed elimina spazi (es. 'Lat ' -> 'lat')
+        df.columns = [str(c).strip().lower() for c in df.columns]
     except Exception as e:
         print(f"❌ Errore nella lettura del file Excel: {e}")
         return
@@ -44,7 +49,7 @@ def merge_excel_to_geojson():
         (
             f["geometry"]["coordinates"][1],
             f["geometry"]["coordinates"][0],
-            f["properties"].get("data_ora")
+            str(f["properties"].get("data_ora"))
         )
         for f in existing_features
     }
@@ -53,11 +58,20 @@ def merge_excel_to_geojson():
 
     for _, row in df.iterrows():
         try:
-            lat = float(row["lat"])
-            lon = float(row["lon"])
+            # Accetta varianti maiuscole/minuscole per le colonne chiave
+            lat_val = row.get("lat") or row.get("latitudine")
+            lon_val = row.get("lon") or row.get("longitudine")
+            
+            if pd.isna(lat_val) or pd.isna(lon_val):
+                continue
+                
+            # Converte gestendo sia il punto che la virgola decimale
+            lat = float(str(lat_val).replace(',', '.'))
+            lon = float(str(lon_val).replace(',', '.'))
+            
             categoria = str(row.get("categoria", "Evento"))
-            localita = str(row.get("localita", ""))
-            data_ora = str(row.get("data_ora", ""))
+            localita = str(row.get("localita", row.get("località", "")))
+            data_ora = str(row.get("data_ora", row.get("data", "")))
 
             event_key = (lat, lon, data_ora)
 
@@ -79,14 +93,14 @@ def merge_excel_to_geojson():
                 nuovi_inseriti += 1
 
         except Exception as err:
-            print(f"⚠️ Errore in una riga dell'Excel (saltata): {err}")
+            print(f"⚠️ Errore in una riga (saltata): {err}")
 
     geojson_data["features"] = existing_features
 
     with open(GEOJSON_FILE, "w", encoding="utf-8") as f:
         json.dump(geojson_data, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ Sincronizzazione completata! Aggiunti {nuovi_inseriti} nuovi eventi.")
+    print(f"✅ Sincronizzazione completata! Aggiunti {nuovi_inseriti} nuovi eventi. Totale eventi in archivio: {len(existing_features)}")
 
 if __name__ == "__main__":
     merge_excel_to_geojson()
