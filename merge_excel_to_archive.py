@@ -1,107 +1,243 @@
-import pandas as pd
-import json
-import os
-import glob
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nowcasting Italia — Archivio Eventi Severi</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-GEOJSON_FILE = "events.geojson"
-
-def find_excel_file():
-    # Cerca qualsiasi file che contenga 'xlsx' nel nome (gestisce doppie estensioni e maiuscole/minuscole)
-    files = glob.glob("*[Xx][Ll][Ss][Xx]*")
-    if not files:
-        # Fallback di sicurezza: cerca qualsiasi file .xlsx o .XLSX
-        files = glob.glob("*.xlsx") + glob.glob("*.XLSX")
-    if not files:
-        return None
-    for f in files:
-        if not f.startswith("~$") and f != GEOJSON_FILE:
-            return f
-    return None
-
-def merge_excel_to_geojson():
-    if os.path.exists(GEOJSON_FILE):
-        try:
-            with open(GEOJSON_FILE, "r", encoding="utf-8") as f:
-                geojson_data = json.load(f)
-        except Exception:
-            geojson_data = {"type": "FeatureCollection", "features": []}
-    else:
-        geojson_data = {"type": "FeatureCollection", "features": []}
-
-    excel_file = find_excel_file()
-    if not excel_file:
-        print("❌ Nessun file Excel trovato nel repository.")
-        return
-
-    print(f"📂 Trovato file: {excel_file}")
-
-    try:
-        df = pd.read_excel(excel_file)
-        # Forza tutte le intestazioni in minuscolo ed elimina spazi (es. 'Lat ' -> 'lat')
-        df.columns = [str(c).strip().lower() for c in df.columns]
-    except Exception as e:
-        print(f"❌ Errore nella lettura del file Excel: {e}")
-        return
-
-    existing_features = geojson_data.get("features", [])
-    
-    existing_keys = {
-        (
-            f["geometry"]["coordinates"][1],
-            f["geometry"]["coordinates"][0],
-            str(f["properties"].get("data_ora"))
-        )
-        for f in existing_features
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #0b0f19;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #ffffff;
+      overflow: hidden;
     }
 
-    nuovi_inseriti = 0
+    /* Barra superiore stile Dashboard Nowcasting Italia */
+    .dashboard-header {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 10px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      position: relative;
+    }
 
-    for _, row in df.iterrows():
-        try:
-            # Accetta varianti maiuscole/minuscole per le colonne chiave
-            lat_val = row.get("lat") or row.get("latitudine")
-            lon_val = row.get("lon") or row.get("longitudine")
+    .dashboard-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      color: #38bdf8;
+    }
+
+    .tracker-nav {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .tracker-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tracker-btn:hover, .tracker-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    /* Mappa */
+    #map {
+      width: 100%;
+      height: calc(100vh - 95px);
+      background: #0b0f19;
+    }
+
+    /* Box info inferiore stile Tracker 3D */
+    .info-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 15px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #334155;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: bold;
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      box-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* Icona emoji personalizzata */
+    .custom-emoji-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.7));
+    }
+
+    /* Popup personalizzati in stile dark */
+    .leaflet-popup-content-wrapper {
+      background: #0f172a !important;
+      color: #f8fafc !important;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .leaflet-popup-tip {
+      background: #0f172a !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra superiore di navigazione tra i tracker del sito -->
+  <div class="dashboard-header">
+    <div class="dashboard-title-row">
+      <span>❄ NOWCASTING ITALIA — ARCHIVIO EVENTI SEVERI</span>
+      <span style="color: #cbd5e1; font-weight: normal;">• LIVE CUMULATIVO ANNUALE</span>
+    </div>
+    <div class="tracker-nav">
+      <a href="https://sites.google.com/view/nowcasting-italia/pannello-di-controllo" class="tracker-btn">🏠 Pannello Controllo</a>
+      <a href="https://sites.google.com/view/nowcasting-italia/satellite-infrarosso" class="tracker-btn">🛰 Satellite IR</a>
+      <a href="https://sites.google.com/view/nowcasting-italia/cape-italia" class="tracker-btn">⚡ CAPE Italia</a>
+      <a href="https://sites.google.com/view/nowcasting-italia/global-lightning-detector" class="tracker-btn">⚡ Lightning</a>
+      <a href="#" class="tracker-btn active">📍 Eventi Severi (Live)</a>
+    </div>
+  </div>
+
+  <!-- Contenitore Mappa -->
+  <div id="map"></div>
+
+  <!-- Barra di stato inferiore -->
+  <div class="info-bar">
+    <div class="badge-pill">
+      <div class="pulse-dot"></div>
+      <span id="event-count">Eventi registrati: caricamento...</span>
+    </div>
+    <div style="color: #94a3b8;">| Fonte: Monitoraggio Cronaca & Open Data</div>
+  </div>
+
+  <script>
+    // Inizializzazione mappa centrata sull'Italia
+    var map = L.map('map', {
+      zoomControl: false
+    }).setView([42.3, 12.5], 6);
+
+    // Zoom in alto a destra per coerenza con gli altri tracker
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Layer cartografico a rilievo fisico Esri (stesso identico dello Snow Tracker)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 12
+    }).addTo(map);
+
+    // Funzione per associare l'emoji giusta alla categoria dell'evento
+    function getEmojiForCategory(cat) {
+      if (!cat) return '⚠️';
+      const c = cat.toLowerCase();
+      if (c.includes('tromba') || c.includes('tornado') || c.includes('twister')) return '🌪️';
+      if (c.includes('fulmin') || c.includes('lamp') || c.includes('temporale')) return '⚡';
+      if (c.includes('vento') || c.includes('raffica') || c.includes('downburst')) return '🌬️';
+      if (c.includes('grandin') || c.includes('blizzard')) return '⛈️';
+      if (c.includes('neve') || c.includes('gelo') || c.includes('ghiaccio')) return '❄️';
+      return '⚠️';
+    }
+
+    // Caricamento del file events.geojson generato automaticamente da GitHub Actions
+    fetch('events.geojson')
+      .then(res => res.json())
+      .then(data => {
+        var count = data.features ? data.features.length : 0;
+        document.getElementById('event-count').innerText = "Eventi attivi in archivio: " + count;
+
+        L.geoJSON(data, {
+          pointToLayer: function (feature, latlng) {
+            var cat = feature.properties.categoria || '';
+            var emoji = getEmojiForCategory(cat);
             
-            if pd.isna(lat_val) or pd.isna(lon_val):
-                continue
-                
-            # Converte gestendo sia il punto che la virgola decimale
-            lat = float(str(lat_val).replace(',', '.'))
-            lon = float(str(lon_val).replace(',', '.'))
-            
-            categoria = str(row.get("categoria", "Evento"))
-            localita = str(row.get("localita", row.get("località", "")))
-            data_ora = str(row.get("data_ora", row.get("data", "")))
+            var emojiIcon = L.divIcon({
+              className: 'custom-emoji-icon',
+              html: `<span>${emoji}</span>`,
+              iconSize: [30, 30],
+              iconAnchor: [15, 15]
+            });
 
-            event_key = (lat, lon, data_ora)
+            return L.marker(latlng, { icon: emojiIcon });
+          },
+          onEachFeature: function (feature, layer) {
+            var p = feature.properties;
+            var cat = p.categoria || 'Evento Severo';
+            var loc = p.localita || 'Non specificata';
+            var dataOra = p.data_ora || 'Non specificata';
 
-            if event_key not in existing_keys:
-                feature = {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [lon, lat]
-                    },
-                    "properties": {
-                        "categoria": categoria,
-                        "localita": localita,
-                        "data_ora": data_ora
-                    }
-                }
-                existing_features.append(feature)
-                existing_keys.add(event_key)
-                nuovi_inseriti += 1
+            var popupContent = `
+              <div style="font-family:inherit; min-width:200px; line-height:1.4;">
+                <b style="color: #f87171; font-size:13px; display:block; margin-bottom:4px; text-transform:capitalize;">${cat}</b>
+                <b>Località:</b> ${loc}<br>
+                <b>Data/Ora:</b> ${dataOra}<br>
+              </div>
+            `;
+            layer.bindPopup(popupContent);
+          }
+        }).addTo(map);
+      })
+      .catch(err => {
+        console.log("In attesa del popolamento file GeoJSON:", err);
+        document.getElementById('event-count').innerText = "Archivio pronto (In attesa primo evento)";
+      });
+  </script>
 
-        except Exception as err:
-            print(f"⚠️ Errore in una riga (saltata): {err}")
-
-    geojson_data["features"] = existing_features
-
-    with open(GEOJSON_FILE, "w", encoding="utf-8") as f:
-        json.dump(geojson_data, f, ensure_ascii=False, indent=2)
-
-    print(f"✅ Sincronizzazione completata! Aggiunti {nuovi_inseriti} nuovi eventi. Totale eventi in archivio: {len(existing_features)}")
-
-if __name__ == "__main__":
-    merge_excel_to_geojson()
-    
+</body>
+</html>
