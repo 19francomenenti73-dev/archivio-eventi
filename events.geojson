@@ -1,4 +1,20 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.293,
+          37.086
+        ]
+      },
+      "properties": {
+        "categoria": "tromba marina",
+        "localita": "A largo Siracusa",
+        "data_ora": "13/10/2026-"
+      }
+    }
+  ]
 }
