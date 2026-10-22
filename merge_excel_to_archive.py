@@ -20,9 +20,7 @@ def clean_localita(text):
     """Pulisce la stringa rimuovendo indicazioni stradali complesse per facilitare il geocoding"""
     if not text:
         return ""
-    # Rimuove parole chiave stradali e amministrative superflue
-    cleaned = re.sub(r'\b(strada statale|statale|ss|via|km|confine|prov|provincia|località|loc|del|della|alle)\b\.?', '', text, flags=urllib.parse.re.IGNORECASE if hasattr(urllib.parse, 're') else re.IGNORECASE)
-    # Rimuove numeri isolati (es. 107, 106)
+    cleaned = re.sub(r'\b(strada statale|statale|ss|via|km|confine|prov|provincia|località|loc|del|della|alle)\b\.?', '', text, flags=re.IGNORECASE)
     cleaned = re.sub(r'\b\d+\b', '', cleaned)
     return cleaned.strip(' ,-/')
 
@@ -54,7 +52,7 @@ def get_lat_lon_from_localita(localita_str):
         except Exception as e:
             print(f"⚠️ Errore geocoding per '{q}': {e}")
         
-        time.sleep(1) # Pausa tra i tentativi per rispettare le API
+        time.sleep(1)
         
     return None, None
 
@@ -104,7 +102,6 @@ def merge_excel_to_geojson():
             localita = str(row.get("localita") or row.get("località") or row.get("luogo") or "Non specificata").strip()
             data_ora = str(row.get("data_ora") or row.get("data") or row.get("data/ora") or "Non specificata").strip()
 
-            # Se mancano lat/lon, attiva il geocoding intelligente
             if pd.isna(lat_val) or pd.isna(lon_val) or str(lat_val).strip() == "" or str(lon_val).strip() == "":
                 lat, lon = get_lat_lon_from_localita(localita)
                 if lat is None or lon is None:
@@ -127,14 +124,8 @@ def merge_excel_to_geojson():
                     "properties": {
                         "categoria": categoria,
                         "localita": localita,
-                        _data_ora := "data_ora": data_ora
+                        "data_ora": data_ora
                     }
-                }
-                # Fix pulizia dizionario proprietà
-                feature["properties"] = {
-                    "categoria": categoria,
-                    "localita": localita,
-                    "data_ora": data_ora
                 }
                 existing_features.append(feature)
                 existing_keys.add(event_key)
