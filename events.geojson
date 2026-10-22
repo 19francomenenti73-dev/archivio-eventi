@@ -150,6 +150,51 @@
         "localita": "Oristano Sardegna",
         "data_ora": "21/10/2026"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.2754474,
+          39.2953118
+        ]
+      },
+      "properties": {
+        "categoria": "Allagamenti",
+        "localita": "strada statale Silana 107",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          17.1005418,
+          39.2300295
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "strada statale 106 Jonica località Strongoli",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.2410404,
+          41.4969546
+        ]
+      },
+      "properties": {
+        "categoria": "crollo argine",
+        "localita": "Fiume Amaseno Confine prov. Frosinone/Latina",
+        "data_ora": "21/10/2026"
+      }
     }
   ]
 }
