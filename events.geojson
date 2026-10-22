@@ -210,6 +210,51 @@
         "localita": "strada statale 106 Jonica località Strongoli",
         "data_ora": "21/10/2026"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.6385399,
+          39.6110298
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "strada statale 106 Jonica località Strongoli",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.2525727,
+          44.2334238
+        ]
+      },
+      "properties": {
+        "categoria": "frana",
+        "localita": "Savona via Famagosta",
+        "data_ora": "20/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.8434583,
+          41.4163427
+        ]
+      },
+      "properties": {
+        "categoria": "straripamento canale",
+        "localita": "Latina Lido via Capra",
+        "data_ora": "21/10/2026"
+      }
     }
   ]
 }
