@@ -155,8 +155,7 @@
       <a href="#" class="tracker-btn active">📍 Eventi Severi (Live)</a>
     </div>
   </div>
-
-  <!-- Contenitore Mappa -->
+    <!-- Contenitore Mappa -->
   <div id="map"></div>
 
   <!-- Barra di stato inferiore -->
@@ -187,11 +186,32 @@
     function getEmojiForCategory(cat) {
       if (!cat) return '⚠️';
       const c = cat.toLowerCase();
-      if (c.includes('tromba') || c.includes('tornado') || c.includes('twister')) return '🌪️';
+
+      // Trombe d'aria / Tornado / Twister
+      if (c.includes('tromba') || c.includes('tornado') || c.includes('twister') || c.includes('waterspout')) return '🌪️';
+
+      // Fulmini / Temporali
       if (c.includes('fulmin') || c.includes('lamp') || c.includes('temporale')) return '⚡';
-      if (c.includes('vento') || c.includes('raffica') || c.includes('downburst')) return '🌬️';
+
+      // Vento / Raffica / Downburst
+      if (c.includes('vento') || c.includes('raffica') || c.includes('downburst') || c.includes('bufera')) return '🌬️';
+
+      // Grandine / Blizzards
       if (c.includes('grandin') || c.includes('blizzard')) return '⛈️';
-      if (c.includes('neve') || c.includes('gelo') || c.includes('ghiaccio')) return '❄️';
+
+      // Neve / Gelo / Ghiaccio
+      if (c.includes('neve') || c.includes('gelo') || c.includes('ghiaccio') || c.includes('galverna')) return '❄️';
+
+      // Allagamenti / Alluvioni / Flash Flood
+      if (c.includes('allagam') || c.includes('alluvion') || c.includes('allagamento') || c.includes('inondaz')) return '💧';
+
+      // Straripamenti / Esondazioni / Fiumi / Mareggiate
+      if (c.includes('strarip') || c.includes('esondaz') || c.includes('fiume') || c.includes('mareggiata') || c.includes('piena')) return '🌊';
+
+      // Frane / Smottamenti / Detriti / Frana
+      if (c.includes('fran') || c.includes('smottam') || c.includes('detrit') || c.includes('colata')) return '🪨';
+
+      // Icona di fallback per categorie non riconosciute
       return '⚠️';
     }
 
