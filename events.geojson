@@ -195,6 +195,21 @@
         "localita": "Fiume Amaseno Confine prov. Frosinone/Latina",
         "data_ora": "21/10/2026"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          17.1033815,
+          39.2425118
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "strada statale 106 Jonica località Strongoli",
+        "data_ora": "21/10/2026"
+      }
     }
   ]
 }
