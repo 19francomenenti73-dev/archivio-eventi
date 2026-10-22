@@ -16,30 +16,26 @@ def find_excel_file():
             return f
     return None
 
-def clean_localita(text):
-    """Estrae parole chiave utili per il geocoding da descrizioni stradali complesse"""
-    if not text:
-        return ""
-    # Rimuove termini stradali e isola i nomi di luoghi o comuni
-    cleaned = re.sub(r'\b(strada statale|statale|ss|via|km|confine|prov|provincia|località|loc|del|della|alle|al|sul|sulla)\b\.?', '', str(text), flags=re.IGNORECASE)
-    cleaned = re.sub(r'\b\d+\b', '', cleaned)
-    return cleaned.strip(' ,-/')
-
 def get_lat_lon_from_localita(localita_str):
-    """Cerca le coordinate provando più varianti della stringa"""
+    """Estrae la località principale (es. il Comune) isolandola da vie o strade e cerca le coordinate"""
     if not localita_str or localita_str == "Non specificata":
         return None, None
     
-    # Crea una lista di tentativi (stringa originale, stringa pulita, e prime parole)
-    tentativi = [
-        localita_str, 
-        clean_localita(localita_str),
-        localita_str.split(',')[0], # Prende la prima parte prima della virgola
-        localita_str.split('prov')[0]
-    ]
+    tentativi = [localita_str]
     
+    # Se la stringa contiene indicatori di via o strada, estrae la parte geografica principale prima di essi
+    for sep in [' via ', ' viale ', ' piazza ', ' ss ', ' strada ', ' fiume ', ' località ', ' loc ']:
+        if sep in localita_str.lower():
+            parte_principale = localita_str.lower().split(sep)[0].strip()
+            if parte_principale:
+                tentativi.append(parte_principale)
+    
+    # Tentativo di pulizia generale da parole chiave superflue
+    pulita = re.sub(r'\b(strada statale|statale|ss|via|viale|piazza|km|confine|prov|provincia|località|loc|del|della|alle|al|sul|sulla)\b\.?', '', localita_str, flags=re.IGNORECASE)
+    tentativi.append(pulita.strip(' ,-/'))
+
     for q in tentativi:
-        q_str = str(q).strip()
+        q_str = str(q).strip(' ,-/')
         if not q_str or len(q_str) < 2:
             continue
         try:
@@ -83,9 +79,7 @@ def merge_excel_to_geojson():
 
     try:
         df = pd.read_excel(excel_file)
-        # Pulisce i nomi delle colonne rimuovendo spazi e portandole in minuscolo
         df.columns = [str(c).strip().lower() for c in df.columns]
-        print(ico_cols := f"Colonne rilevate: {list(df.columns)}")
     except Exception as e:
         print(f"❌ Errore nella lettura del file Excel: {e}")
         return
@@ -105,7 +99,6 @@ def merge_excel_to_geojson():
 
     for row in df.to_dict(orient="records"):
         try:
-            # Cerca le coordinate con varianti di nomi colonna
             lat_val = row.get("lat") or row.get("latitude") or row.get("latitudine")
             lon_val = row.get("lon") or row.get("longitude") or row.get("longitudine") or row.get("lng")
             
@@ -113,7 +106,6 @@ def merge_excel_to_geojson():
             localita = str(row.get("localita") or row.get("località") or row.get("luogo") or "").strip()
             data_ora = str(row.get("data_ora") or row.get("data") or row.get("data/ora") or "Non specificata").strip()
 
-            # Se la località è vuota e mancano le coordinate, salta la riga
             if not localita and (pd.isna(lat_val) or pd.isna(lon_val)):
                 continue
 
@@ -154,8 +146,8 @@ def merge_excel_to_geojson():
     with open(GEOJSON_FILE, "w", encoding="utf-8") as f:
         json.dump(geojson_data, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ Sincronizzazione completata! Aggiunti {nuovi_inseriti} nuovi eventi. Totale in archivio: {len(existing_features)}")
+    print(f"✅ Sincronizzazione completata! Aggiunti {nuovi_inseriti} nuovi eventi. Totale: {len(existing_features)}")
 
 if __name__ == "__main__":
     merge_excel_to_geojson()
-    
+            
