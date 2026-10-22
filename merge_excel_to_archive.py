@@ -2,6 +2,7 @@ import os
 import json
 import glob
 import time
+import re
 import urllib.request
 import urllib.parse
 import pandas as pd
@@ -15,27 +16,46 @@ def find_excel_file():
             return f
     return None
 
+def clean_localita(text):
+    """Pulisce la stringa rimuovendo indicazioni stradali complesse per facilitare il geocoding"""
+    if not text:
+        return ""
+    # Rimuove parole chiave stradali e amministrative superflue
+    cleaned = re.sub(r'\b(strada statale|statale|ss|via|km|confine|prov|provincia|località|loc|del|della|alle)\b\.?', '', text, flags=urllib.parse.re.IGNORECASE if hasattr(urllib.parse, 're') else re.IGNORECASE)
+    # Rimuove numeri isolati (es. 107, 106)
+    cleaned = re.sub(r'\b\d+\b', '', cleaned)
+    return cleaned.strip(' ,-/')
+
 def get_lat_lon_from_localita(localita_str):
-    """Cerca automaticamente le coordinate tramite Nominatim (OpenStreetMap) se mancano lat/lon"""
+    """Cerca le coordinate tramite Nominatim tentando prima la stringa originale e poi una versione pulita"""
     if not localita_str or localita_str == "Non specificata":
         return None, None
-    try:
-        query = f"{localita_str}, Italia"
-        url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&limit=1"
+    
+    tentativi = [localita_str, clean_localita(localita_str)]
+    
+    for q in tentativi:
+        if not q or len(q) < 2:
+            continue
+        try:
+            query = f"{q}, Italia"
+            url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&limit=1"
+            
+            req = urllib.request.Request(
+                url, 
+                headers={'User-Agent': 'NowcastingItaliaBot/1.0'}
+            )
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode())
+                if data:
+                    lat = float(data[0]['lat'])
+                    lon = float(data[0]['lon'])
+                    print(f"🌍 Geocoding riuscito per '{localita_str}' (usato: '{q}'): ({lat}, {lon})")
+                    return lat, lon
+        except Exception as e:
+            print(f"⚠️ Errore geocoding per '{q}': {e}")
         
-        req = urllib.request.Request(
-            url, 
-            headers={'User-Agent': 'NowcastingItaliaBot/1.0'}
-        )
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-            if data:
-                lat = float(data[0]['lat'])
-                lon = float(data[0]['lon'])
-                print(f"🌍 Geocoding automatico riuscito per '{localita_str}': ({lat}, {lon})")
-                return lat, lon
-    except Exception as e:
-        print(f"⚠️ Errore geocoding per '{localita_str}': {e}")
+        time.sleep(1) # Pausa tra i tentativi per rispettare le API
+        
     return None, None
 
 def merge_excel_to_geojson():
@@ -84,14 +104,12 @@ def merge_excel_to_geojson():
             localita = str(row.get("localita") or row.get("località") or row.get("luogo") or "Non specificata").strip()
             data_ora = str(row.get("data_ora") or row.get("data") or row.get("data/ora") or "Non specificata").strip()
 
-            # Controlla se lat/lon sono vuoti o mancanti nel file Excel
+            # Se mancano lat/lon, attiva il geocoding intelligente
             if pd.isna(lat_val) or pd.isna(lon_val) or str(lat_val).strip() == "" or str(lon_val).strip() == "":
-                # Se mancano, prova a ricavarli automaticamente dalla località!
                 lat, lon = get_lat_lon_from_localita(localita)
                 if lat is None or lon is None:
-                    print(f"⚠️ Saltato '{localita}': coordinate mancanti e geocoding fallito.")
+                    print(f"⚠️ Impossibile geocalizzare '{localita}': riga saltata.")
                     continue
-                # Piccola pausa per rispettare i termini di servizio delle API pubbliche di geocoding
                 time.sleep(1)
             else:
                 lat = float(str(lat_val).replace(",", "."))
@@ -109,8 +127,14 @@ def merge_excel_to_geojson():
                     "properties": {
                         "categoria": categoria,
                         "localita": localita,
-                        "data_ora": data_ora
+                        _data_ora := "data_ora": data_ora
                     }
+                }
+                # Fix pulizia dizionario proprietà
+                feature["properties"] = {
+                    "categoria": categoria,
+                    "localita": localita,
+                    "data_ora": data_ora
                 }
                 existing_features.append(feature)
                 existing_keys.add(event_key)
