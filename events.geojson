@@ -30,6 +30,126 @@
         "localita": "a largo Palermo",
         "data_ora": "2026-10-13 00:00:00"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.9338624,
+          44.40726
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "Genova",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.3402239,
+          42.7902379
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "Isola d'Elba",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.6285618,
+          41.4471008
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "Anzio",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.2643954,
+          39.2973106
+        ]
+      },
+      "properties": {
+        "categoria": "Allagamenti",
+        "localita": "strada statale Silana 107",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.2525727,
+          44.2334238
+        ]
+      },
+      "properties": {
+        "categoria": "Allagamenti",
+        "localita": "Savona",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.7469715,
+          40.6119025
+        ]
+      },
+      "properties": {
+        "categoria": "Allagamenti",
+        "localita": "Siniscola Sardegna",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.5031895,
+          44.3272723
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "Albissola Marina",
+        "data_ora": "21/10/2026"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.8733897,
+          39.7121324
+        ]
+      },
+      "properties": {
+        "categoria": "allagamenti",
+        "localita": "Oristano Sardegna",
+        "data_ora": "21/10/2026"
+      }
     }
   ]
 }
